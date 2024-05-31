@@ -117,6 +117,8 @@ void fillDataSetVectorFromCsv(vector<timeStepStructure>& aDataSet, string aFileN
     }
 }
 //+----------------------------------------------------------------------------------+
+//+----------------------------------DATA PREPARATION--------------------------------+
+//+----------------------------------------------------------------------------------+
 template <typename T>
 
 void moveElements(T& aSource, T& aDestination, int aStartIndx, int aEndIndx) {
@@ -206,6 +208,8 @@ void prepareDataForTraining(vector<timeStepStructure>& aDataSet, int aSampleSize
     divideSamplesIntoBatches(setOfSamples, setOfBatches, aBatchSize);
 }
 //+----------------------------------------------------------------------------------+
+//+----------------------------------LSTM CELL---------------------------------------+
+//+----------------------------------------------------------------------------------+
 double sigmoid(double x) {
 
     return 1 / (1 + exp(-x));
@@ -245,6 +249,8 @@ lstmCellOutput lstmCell(double aInputValue, double aInSTMem, double aInLTMem, we
     pOutput.longTermMemory = pNewLongTermMem;
     return pOutput;
 }
+//+----------------------------------------------------------------------------------+
+//+---------------------------------CALCULATING GRADS--------------------------------+
 //+----------------------------------------------------------------------------------+
 void calculateGradientsForTimeStep(double aInputValue, double aInSTMem, double aInLTMem, double aLoss, double aOutSTMem, double aOutLTMem, weights& aWeights, biases& aBias, weightGradeints& aWeightGradientsForTimeStep, biasGradients& aBiasGradientsForTimeStep) {
 
@@ -318,21 +324,21 @@ void calculateGradientsForSample(weights& aWeights, biases& aBias, vector<timeSt
         pInSTMem = pLstmCellOutput.shortTermMemory;
         pInLTMem = pLstmCellOutput.longTermMemory;
 
-        aWeightGradientsForSample.forgetGateInputWeightGrad -= pWeightGradientsForTimeStep.forgetGateInputWeightGrad;
-        aWeightGradientsForSample.forgetGateSTMemWeightGrad -= pWeightGradientsForTimeStep.forgetGateSTMemWeightGrad;
-        aBiasGradientsForSample.forgetGateBiasGrad -= pBiasGradientsForTimeStep.forgetGateBiasGrad;
+        aWeightGradientsForSample.forgetGateInputWeightGrad += pWeightGradientsForTimeStep.forgetGateInputWeightGrad;
+        aWeightGradientsForSample.forgetGateSTMemWeightGrad += pWeightGradientsForTimeStep.forgetGateSTMemWeightGrad;
+        aBiasGradientsForSample.forgetGateBiasGrad += pBiasGradientsForTimeStep.forgetGateBiasGrad;
 
-        aWeightGradientsForSample.inputGateInputWeight_1stStageGrad -= pWeightGradientsForTimeStep.inputGateInputWeight_1stStageGrad;
-        aWeightGradientsForSample.inputGateSTMemWeight_1stStageGrad -= pWeightGradientsForTimeStep.inputGateSTMemWeight_1stStageGrad;
-        aBiasGradientsForSample.inputGateBias_1stStageGrad -= pBiasGradientsForTimeStep.inputGateBias_1stStageGrad;
+        aWeightGradientsForSample.inputGateInputWeight_1stStageGrad += pWeightGradientsForTimeStep.inputGateInputWeight_1stStageGrad;
+        aWeightGradientsForSample.inputGateSTMemWeight_1stStageGrad += pWeightGradientsForTimeStep.inputGateSTMemWeight_1stStageGrad;
+        aBiasGradientsForSample.inputGateBias_1stStageGrad += pBiasGradientsForTimeStep.inputGateBias_1stStageGrad;
 
-        aWeightGradientsForSample.inputGateInputWeight_2ndStageGrad -= pWeightGradientsForTimeStep.inputGateInputWeight_2ndStageGrad;
-        aWeightGradientsForSample.inputGateSTMemWeight_2ndStageGrad -= pWeightGradientsForTimeStep.inputGateSTMemWeight_2ndStageGrad;
-        aBiasGradientsForSample.inputGateBias_2ndStageGrad -= pBiasGradientsForTimeStep.inputGateBias_2ndStageGrad;
+        aWeightGradientsForSample.inputGateInputWeight_2ndStageGrad += pWeightGradientsForTimeStep.inputGateInputWeight_2ndStageGrad;
+        aWeightGradientsForSample.inputGateSTMemWeight_2ndStageGrad += pWeightGradientsForTimeStep.inputGateSTMemWeight_2ndStageGrad;
+        aBiasGradientsForSample.inputGateBias_2ndStageGrad += pBiasGradientsForTimeStep.inputGateBias_2ndStageGrad;
 
-        aWeightGradientsForSample.outputGateInputWeightGrad -= pWeightGradientsForTimeStep.outputGateInputWeightGrad;
-        aWeightGradientsForSample.outputGateSTMemWeightGrad -= pWeightGradientsForTimeStep.outputGateSTMemWeightGrad;
-        aBiasGradientsForSample.outputGateBiasGrad -= pBiasGradientsForTimeStep.outputGateBiasGrad;
+        aWeightGradientsForSample.outputGateInputWeightGrad += pWeightGradientsForTimeStep.outputGateInputWeightGrad;
+        aWeightGradientsForSample.outputGateSTMemWeightGrad += pWeightGradientsForTimeStep.outputGateSTMemWeightGrad;
+        aBiasGradientsForSample.outputGateBiasGrad += pBiasGradientsForTimeStep.outputGateBiasGrad;
     }
 }
 //+----------------------------------------------------------------------------------+
@@ -381,6 +387,8 @@ void calculateGradientsForBatch(weights& aWeights, biases& aBias, vector<vector<
     aBiasGradientsForBatch.outputGateBiasGrad /= pBatchSize;
 }
 //+----------------------------------------------------------------------------------+
+//+----------------------------GRADIENT DESCENT OPTIMIZER----------------------------+
+//+----------------------------------------------------------------------------------+
 void calculateNewWeightsAndBiasesForNextBatch(weights& aWeights, biases& aBias, vector<vector<timeStepStructure>>& aBatch, double aLearningRate) {
 
     weightGradeints pWeightGradientsForBatch;
@@ -390,21 +398,21 @@ void calculateNewWeightsAndBiasesForNextBatch(weights& aWeights, biases& aBias, 
 
     //Optimization of weights and biases based on the current batch, these new weights and biases will be input parameters for the next batch
 
-    aWeights.forgetGateInputWeight += (aLearningRate * pWeightGradientsForBatch.forgetGateInputWeightGrad);
-    aWeights.forgetGateSTMemWeight += (aLearningRate * pWeightGradientsForBatch.forgetGateSTMemWeightGrad);
-    aBias.forgetGateBias += (aLearningRate * pBiasGradientsForBatch.forgetGateBiasGrad);
+    aWeights.forgetGateInputWeight -= (aLearningRate * pWeightGradientsForBatch.forgetGateInputWeightGrad);
+    aWeights.forgetGateSTMemWeight -= (aLearningRate * pWeightGradientsForBatch.forgetGateSTMemWeightGrad);
+    aBias.forgetGateBias -= (aLearningRate * pBiasGradientsForBatch.forgetGateBiasGrad);
 
-    aWeights.inputGateInputWeight_1stStage += (aLearningRate * pWeightGradientsForBatch.inputGateInputWeight_1stStageGrad);
-    aWeights.inputGateSTMemWeight_1stStage += (aLearningRate * pWeightGradientsForBatch.inputGateSTMemWeight_1stStageGrad);
-    aBias.inputGateBias_1stStage += (aLearningRate * pBiasGradientsForBatch.inputGateBias_1stStageGrad);
+    aWeights.inputGateInputWeight_1stStage -= (aLearningRate * pWeightGradientsForBatch.inputGateInputWeight_1stStageGrad);
+    aWeights.inputGateSTMemWeight_1stStage -= (aLearningRate * pWeightGradientsForBatch.inputGateSTMemWeight_1stStageGrad);
+    aBias.inputGateBias_1stStage -= (aLearningRate * pBiasGradientsForBatch.inputGateBias_1stStageGrad);
 
-    aWeights.inputGateInputWeight_2ndStage += (aLearningRate * pWeightGradientsForBatch.inputGateInputWeight_2ndStageGrad);
-    aWeights.inputGateSTMemWeight_2ndStage += (aLearningRate * pWeightGradientsForBatch.inputGateSTMemWeight_2ndStageGrad);
-    aBias.inputGateBias_2ndStage += (aLearningRate * pBiasGradientsForBatch.inputGateBias_2ndStageGrad);
+    aWeights.inputGateInputWeight_2ndStage -= (aLearningRate * pWeightGradientsForBatch.inputGateInputWeight_2ndStageGrad);
+    aWeights.inputGateSTMemWeight_2ndStage -= (aLearningRate * pWeightGradientsForBatch.inputGateSTMemWeight_2ndStageGrad);
+    aBias.inputGateBias_2ndStage -= (aLearningRate * pBiasGradientsForBatch.inputGateBias_2ndStageGrad);
 
-    aWeights.outputGateInputWeight += (aLearningRate * pWeightGradientsForBatch.outputGateInputWeightGrad);
-    aWeights.outputGateSTMemWeight += (aLearningRate * pWeightGradientsForBatch.outputGateSTMemWeightGrad);
-    aBias.outputGateBias += (aLearningRate * pBiasGradientsForBatch.outputGateBiasGrad);
+    aWeights.outputGateInputWeight -= (aLearningRate * pWeightGradientsForBatch.outputGateInputWeightGrad);
+    aWeights.outputGateSTMemWeight -= (aLearningRate * pWeightGradientsForBatch.outputGateSTMemWeightGrad);
+    aBias.outputGateBias -= (aLearningRate * pBiasGradientsForBatch.outputGateBiasGrad);
 }
 //+----------------------------------------------------------------------------------+
 void header() {
