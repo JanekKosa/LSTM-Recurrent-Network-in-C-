@@ -1,0 +1,5 @@
+﻿  main.cpp
+C:\Users\janko\My Files\GitHub Projects\LSTM Single Input Predictor\LSTM Single Input Predictor\main.cpp(149,66): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\janko\My Files\GitHub Projects\LSTM Single Input Predictor\LSTM Single Input Predictor\main.cpp(169,70): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\janko\My Files\GitHub Projects\LSTM Single Input Predictor\LSTM Single Input Predictor\main.cpp(347,20): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+  LSTM Single Input Predictor.vcxproj -> C:\Users\janko\My Files\GitHub Projects\LSTM Single Input Predictor\LSTM Single Input Predictor\x64\Debug\LSTM Single Input Predictor.exe

@@ -1,0 +1,7 @@
+﻿  main.cpp
+C:\Users\janko\My Files\GitHub Projects\LSTM Single Input Predictor\LSTM Single Input Predictor\main.cpp(327,20): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 562 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  LSTM Single Input Predictor.vcxproj -> C:\Users\janko\My Files\GitHub Projects\LSTM Single Input Predictor\LSTM Single Input Predictor\x64\Release\LSTM Single Input Predictor.exe
